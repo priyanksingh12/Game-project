@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mini Invaders — 3 Levels</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles1.css" />
 </head>
 <body>
   <header>
@@ -16,6 +16,7 @@
     </div>
     <div class="controls">
       <button id="start">Start</button>
+      <button id="muteBtn">Mute</button>
       <button id="next" disabled>Next Level</button>
       <button id="reset">Reset</button>
     </div>
@@ -26,6 +27,13 @@
     <div id="message">Press Start to play</div>
   </main>
 
-  <script src="game.js"></script>
+  <audio id="bgMusic" loop>
+    <source src="bleeps-and-bloops-classic-arcade-game-116838.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+
+
+
+
+  <script src="game1.js"></script>
 </body>
-</html>
