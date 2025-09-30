@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Invaders — 3 Levels</title>
+  <link rel="stylesheet" href="zom1.css" />
+</head>
+
+
+<body>
+  <header>
+    <h1>Mini Invaders</h1>
+    <div class="hud">
+      <div><strong>Level</strong>: <span id="level">1</span></div>
+      <div><strong>Score</strong>: <span id="score">0</span></div>
+      <div><strong>Lives</strong>: <span id="lives">3</span></div>
+    </div>
+    <div class="controls">
+      <button id="start">Start</button>
+      <button id="next" disabled>Next Level</button>
+      <button id="reset">Reset</button>
+    </div>
+  </header>
+
+  <main id="game">
+    <div id="playfield"></div>
+    <div id="message">Press Start to play</div>
+  </main>
+
+  <script src="zom1.js"></script>
+</body>
+
+
+</html>
