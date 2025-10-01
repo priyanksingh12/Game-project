@@ -80,13 +80,13 @@ const LEVELS = {
   },
   2: {
     rows:isMobile ? 3: 4,
-    cols: isMobile ? 5: 8,
+    cols: isMobile ? 6: 8,
     alienSpeed: isMobile ? 0.4 : 0.9,
     shotRate: isMobile ? 0.025 : 0.04
   },
   3: {
-    rows: isMobile ? 3 : 5,    
-    cols: isMobile ? 5 : 9,      
+    rows: isMobile ? 4 : 5,    
+    cols: isMobile ? 6 : 9,      
     alienSpeed: isMobile ? 0.5 : 1.4,  
     shotRate: isMobile ? 0.03 : 0.07
   }
