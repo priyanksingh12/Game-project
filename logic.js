@@ -344,24 +344,43 @@ function loop(now){
   updateAliens(dt);
   updateBullets(dt);
   updateParticles(dt);
-
-  if(aliveAliens()===0){
+if(aliveAliens()===0){
     running=false;
+    updateParticles(16);       
+    particles.forEach(p => p.remove());
+    particles.length = 0;
     msg.innerHTML=`Level ${level} cleared!`;
     nextBtn.disabled = level===3;
     return;
-  }
+}
+
 
   requestAnimationFrame(loop);
 }
 
 startBtn.addEventListener('click', ()=>{
-  startBtn.disabled = true; nextBtn.disabled = true;
-  clearField(); placePlayerCenter(); spawnAliens(); updateHUD();
-  running=true; lastTime=performance.now();
+  startBtn.disabled = true; 
+  nextBtn.disabled = true;
+  clearField(); 
+  placePlayerCenter(); 
+  spawnAliens(); 
+  updateHUD();
+  
+  running = true; 
+  lastTime = performance.now();
   requestAnimationFrame(loop);
-  alienTimer = setInterval(()=>{ if(running && !gamePaused) alienFireChance(); },700);
+  
+  alienTimer = setInterval(()=>{ 
+    if(running && !gamePaused) alienFireChance(); 
+  },700);
+
+  
+  bgMusic.play().catch(() => {
+    
+    console.log("Background music autoplay was blocked.");
+  });
 });
+
 
 nextBtn.addEventListener('click', ()=>{
   if(level<3){ level++; lives=Math.min(3,lives+1); updateHUD(); nextBtn.disabled=true; startBtn.disabled=false; msg.innerHTML=`Ready for level ${level}`; }
