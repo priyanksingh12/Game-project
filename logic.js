@@ -1,3 +1,5 @@
+// logic.js (replace the file contents with this)
+
 const play = document.getElementById('playfield');
 const startBtn = document.getElementById('start');
 const nextBtn = document.getElementById('next');
@@ -57,10 +59,10 @@ function updateParticles(dt) {
     p.life -= dt;
     if (p.life <= 0) {
       p.remove();
-      particles.splice(i, 1);
+      particles.splice(i, 1); // i → index of the particle we are checking.1 → remove exactly 1 particle at that index.
       continue;
     }
-    const left = parseFloat(p.style.left) + p.vx * dt / 16;
+    const left = parseFloat(p.style.left) + p.vx * dt / 16; // speed
     const top = parseFloat(p.style.top) + p.vy * dt / 16;
     p.style.left = left + 'px';
     p.style.top = top + 'px';
@@ -80,13 +82,13 @@ const LEVELS = {
   },
   2: {
     rows:isMobile ? 3: 4,
-    cols: isMobile ? 6: 8,
+    cols: isMobile ? 5: 8,
     alienSpeed: isMobile ? 0.4 : 0.9,
     shotRate: isMobile ? 0.025 : 0.04
   },
   3: {
-    rows: isMobile ? 4 : 5,    
-    cols: isMobile ? 6 : 9,      
+    rows: isMobile ? 3 : 5,    
+    cols: isMobile ? 5 : 9,      
     alienSpeed: isMobile ? 0.5 : 1.4,  
     shotRate: isMobile ? 0.03 : 0.07
   }
@@ -95,12 +97,21 @@ const LEVELS = {
 
 
 
-const player = document.createElement('div');
+let px, pV = 6;  // horizontal position and speed
+
+const player = document.createElement('img');
+player.src = 'rocket-ship.png';  // path to your rocket image
 player.className = 'player';
-player.style.left = '50%';
-player.textContent = '▲';
 play.appendChild(player);
-let px = PF_W() / 2, pV = 6;
+
+// place player after image has loaded
+player.onload = () => {
+    placePlayerCenter();
+    player.style.display = 'block'; // make sure it's visible
+};
+
+
+
 
 function updateHUD() { levelEl.textContent = level; scoreEl.textContent = score; livesEl.textContent = lives; }
 function clearField() {
@@ -114,42 +125,62 @@ function clearField() {
   particles.forEach(p => p.remove());
   particles.length = 0;
 }
-function placePlayerCenter() { px = PF_W() / 2; player.style.left = (px - (player.clientWidth / 2)) + 'px'; }
+
+function placePlayerCenter() {
+    px = PF_W() / 2;
+
+    // Wait until image is loaded
+    if (!player.clientWidth || !player.clientHeight) return;
+
+    player.style.left = (px - player.clientWidth / 2) + 'px';
+    player.style.top = (PF_H() - player.clientHeight - 8) + 'px'; // 8px from bottom
+}
+
+let alienDir = 1;
+let alienOffset = 0;
+
 
 function spawnAliens() {
   const cfg = LEVELS[level];
   const gapX = 12, gapY = 12;
-  const startX = 60, startY = 40;
-  const temp = document.createElement('div');
+  const startX = 60;
+  const startY = isMobile ? 40 : 60; // start lower on desktop to avoid HUD
+
+  // Create a temporary image to get actual width/height of UFO
+  const temp = document.createElement('img');
+  temp.src = 'ufo.png';
   temp.className = 'alien';
   temp.style.visibility = 'hidden';
   play.appendChild(temp);
-  const aW = temp.clientWidth || 44;
-  const aH = temp.clientHeight || 32;
+  const aW = temp.clientWidth || 44;  // width of the alien
+  const aH = temp.clientHeight || 32; // height of the alien
   temp.remove();
 
+  // Loop to create alien grid
   for (let r = 0; r < cfg.rows; r++) {
     for (let c = 0; c < cfg.cols; c++) {
-      const aEl = document.createElement('div');
+      const aEl = document.createElement('img');
+      aEl.src = 'ufo.png';
       aEl.className = 'alien';
-      aEl.dataset.row = r; aEl.dataset.col = c;
+      aEl.dataset.row = r;
+      aEl.dataset.col = c;
+
       const x = startX + c * (aW + gapX);
       const y = startY + r * (aH + gapY);
+
       aEl.style.left = x + 'px';
       aEl.style.top = y + 'px';
-      aEl.textContent = '♦';
+
       play.appendChild(aEl);
       aliens.push({ el: aEl, baseX: x, y: y, alive: true });
     }
   }
 
-  
+  // reset alien group motion
   alienDir = 1;
   alienOffset = 0;
 }
 
-let alienDir = 1;
-let alienOffset = 0;
 
 function aliveAliens() {
   return aliens.reduce((n, a) => n + (a.alive ? 1 : 0), 0);
@@ -165,7 +196,7 @@ function updateAliens(dt) {
 
   const isMobile = window.innerWidth < 700;
   if (isMobile) {
-    speed *= 0.15 + 0.05 * level;  
+    speed *= 0.15 + 0.05 * level; // slower horizontal movement, slightly faster on higher levels
   }
 
   const xs = alive.map(a => a.baseX + alienOffset);
@@ -200,20 +231,25 @@ function updateAliens(dt) {
 
 
 function firePlayer() {
-  if (!running) return;
+  if (!running || gamePaused) return; // ❌ do nothing if paused
   if (playerShot) return;
-  const b = document.createElement('div'); b.className = 'bullet';
-  const bx = px - 3; const by = PF_H() - 56;
-  b.style.left = bx + 'px'; b.style.top = by + 'px';
+  
+  const b = document.createElement('div');
+  b.className = 'bullet';
+  const bx = px - 3; 
+  const by = PF_H() - player.clientHeight - 8 - 16; // tip of rocket
+  b.style.left = bx + 'px'; 
+  b.style.top = by + 'px';
   play.appendChild(b);
   playerShot = b;
   bullets.add(b);
 }
 
+
 function updateBullets(dt) {
   if (!running) return;
 
-  
+  // Player bullet movement
   if (playerShot) {
     const speed = 0.9 * dt;
     const top = parseFloat(playerShot.style.top) - speed;
@@ -225,7 +261,7 @@ function updateBullets(dt) {
     }
   }
 
- 
+  // Enemy bullets movement
   const shotsArray = Array.from(enemyShots);
   for (let s of shotsArray) {
     if (!running) break;
@@ -238,7 +274,7 @@ function updateBullets(dt) {
   }
 
   
- 
+  // Collision: player bullet vs aliens
 if (playerShot && running) {
   const pfRect = play.getBoundingClientRect();
   const br = playerShot.getBoundingClientRect();
@@ -277,7 +313,7 @@ if (playerShot && running) {
       score += 10;
       updateHUD();
 
-      
+      // Remove all particles immediately if this was the last alive alien
       if (aliveAliens() === 0) {
         particles.forEach(p => p.remove());
         particles.length = 0;
@@ -291,7 +327,7 @@ if (playerShot && running) {
 
   if (!running) return;
 
-  
+  // Collision: enemy bullet vs player
   const pfRect = play.getBoundingClientRect();
   const shotsNow = Array.from(enemyShots);
 
@@ -329,20 +365,20 @@ if (playerShot && running) {
     const centerX = pr.left - pfRect.left + pr.width / 2;
     const centerY = pr.top - pfRect.top + pr.height / 2;
 
-   
+    // spawn bigger explosion
     spawnPlayerExplosion(centerX, centerY, 50);
 
-   
+    // hide player
     player.style.display = 'none';
 
-    
+    // clear bullets immediately
     bullets.forEach(b => { if (b.remove) b.remove(); });
     bullets.clear();
     enemyShots.forEach(s => { if (s.el && s.el.remove) s.el.remove(); });
     enemyShots.clear();
     if (playerShot) { if (playerShot.remove) playerShot = null; }
 
-    
+    // animate explosion independently
   function explosionLoop() {
     if (particles.length === 0) {
         endGame(false);
@@ -359,8 +395,6 @@ if (playerShot && running) {
     leftPressed = rightPressed = false;
 }
 
-
-
     }
   }
 }
@@ -373,9 +407,9 @@ function alienFireChance() {
     if (!running) return;
     let shotRate = cfg.shotRate;
 
-   
+    // reduce fire rate for smaller screens (mobile)
     if (window.innerWidth < 700) {
-      shotRate *= 0.6; 
+      shotRate *= 0.6; // 40% fewer shots on mobile
     }
 
     if (Math.random() < shotRate) {
@@ -384,40 +418,56 @@ function alienFireChance() {
       const e = document.createElement('div'); e.className = 'ebullet';
       e.style.left = bx + 'px'; e.style.top = by + 'px';
       play.appendChild(e);
-      enemyShots.add({ el: e, x: bx, y: by, y: by });
+      enemyShots.add({ el: e, x: bx, y: by });
     }
   });
 }
 
 const keys = {};
-window.addEventListener('keydown', e => { keys[e.key] = true; if (e.key === ' ') { firePlayer(); } });
-window.addEventListener('keyup', e => { keys[e.key] = false; });
 
-let last = performance.now();
-function loop(now) {
-  if (!running) return;
-  let dt = now - last;
-  last = now;
+window.addEventListener('keydown', e => { 
+  keys[e.key] = true; 
+  if (e.key === ' ' && !gamePaused) { firePlayer(); } // ❌ only if not paused
+});
+window.addEventListener('keyup', e => {
+  keys[e.key] = false;
+});
+
 
  
-  if (dt > 40) dt = 40;
+
+let last = performance.now();
+
+function loop(now) {
+    let dt = now - last;
+    last = now;
+
+    if (dt > 40) dt = 40;
+
+    if (!running) return; // stop completely if game stopped
+    if (gamePaused) {
+        gameLoopId = requestAnimationFrame(loop); // keep loop alive
+        return;
+    }
+
+    
+
+if (keys.ArrowLeft || keys.a) px -= pV * (dt / 16);
+if (keys.ArrowRight || keys.d) px += pV * (dt / 16);
+if (leftPressed) px -= pV * (dt / 16);
+if (rightPressed) px += pV * (dt / 16);
+
+px = Math.max(player.clientWidth / 2 + 8, Math.min(PF_W() - player.clientWidth / 2 - 8, px));
+player.style.left = (px - player.clientWidth / 2) + 'px';
+player.style.top = (PF_H() - player.clientHeight - 8) + 'px'; // fixed at bottom
 
 
   
-  if (keys.ArrowLeft || keys.a) px -= pV * (dt / 16);
-  if (keys.ArrowRight || keys.d) px += pV * (dt / 16);
-
-  
-  if (leftPressed) px -= pV * (dt / 16);
-  if (rightPressed) px += pV * (dt / 16);
-
-  px = Math.max(8 + player.clientWidth / 2, Math.min(PF_W() - player.clientWidth / 2 - 8, px));
-  player.style.left = (px - player.clientWidth / 2) + 'px';
-
   updateAliens(dt);
   updateBullets(dt);
   updateParticles(dt);
 
+  // alien firing is handled by an interval (set in startLevel)
   const remaining = aliveAliens();
   if (remaining === 0) {
     if (alienTimer) { clearInterval(alienTimer); alienTimer = null; }
@@ -444,8 +494,10 @@ function startLevel() {
   gameLoopId = requestAnimationFrame(loop);
   if (alienTimer) clearInterval(alienTimer);
 
- 
-  alienTimer = setInterval(() => { if (running) alienFireChance(); }, 700);
+ alienTimer = setInterval(() => { 
+  if (running && !gamePaused) alienFireChance(); // ❌ only fire if not paused
+}, 700);
+
 
   startBtn.disabled = true;
   nextBtn.disabled = true;
@@ -515,8 +567,26 @@ muteBtn.addEventListener('click', () => {
   }
 });
 
+const pauseBtn = document.getElementById('pauseBtn');
+let gamePaused = false;
+
+pauseBtn.addEventListener('click', () => {
+  if (!running) return; // do nothing if game hasn't started
+
+  gamePaused = !gamePaused; // toggle pause
+  if (gamePaused) {
+    pauseBtn.textContent = 'Resume';
+  } else {
+    pauseBtn.textContent = 'Pause';
+    last = performance.now(); // reset delta time
+    requestAnimationFrame(loop); // resume game loop
+  }
+});
 
 
+// =======================
+// Mobile controls (clean, minimal, non-invasive)
+// =======================
 const mobileControls = document.createElement("div");
 mobileControls.id = "mobileControls";
 mobileControls.innerHTML = `
@@ -532,7 +602,7 @@ const fireBtn = document.getElementById("fireBtn");
 
 let leftPressed = false, rightPressed = false;
 
-
+// Touch & pointer handlers (supports touch and mouse)
 function prevent(e) { if (e.cancelable) e.preventDefault(); }
 leftBtn.addEventListener("touchstart", e => { prevent(e); leftPressed = true; });
 leftBtn.addEventListener("touchend", e => { prevent(e); leftPressed = false; });
@@ -544,16 +614,11 @@ rightBtn.addEventListener("touchend", e => { prevent(e); rightPressed = false; }
 rightBtn.addEventListener("pointerdown", e => { e.preventDefault(); rightPressed = true; });
 rightBtn.addEventListener("pointerup", e => { e.preventDefault(); rightPressed = false; });
 
-fireBtn.addEventListener("touchstart", e => { prevent(e); firePlayer(); });
-fireBtn.addEventListener("pointerdown", e => { e.preventDefault(); firePlayer(); });
-
-
-play.addEventListener('touchstart', function (e) {
-
-  if (!e.target.closest('#mobileControls')) {
-    firePlayer();
-    prevent(e);
-  }
-}, { passive: false });
-
-
+fireBtn.addEventListener("touchstart", e => { 
+  prevent(e); 
+  if (!gamePaused) firePlayer(); 
+});
+fireBtn.addEventListener("pointerdown", e => { 
+  e.preventDefault(); 
+  if (!gamePaused) firePlayer(); 
+});

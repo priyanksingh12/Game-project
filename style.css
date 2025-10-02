@@ -66,8 +66,8 @@ button:disabled {
 }
 
 main {
-  width: 880px;
-  max-width: 96%;
+  width: px;
+  max-width: fit-content;
   height: 560px;
   background: linear-gradient(180deg, #021726, #00131a);
   border-radius: 10px;
@@ -79,42 +79,32 @@ main {
 }
 
 #playfield {
-  width: 100%;
-  height: 100%;
-  position: relative;
+  width: 800px;       /* or your game width */
+  height: 560px;      /* or your game height */
+  position: relative; /* already likely set */
+  overflow: hidden;   /* keeps particles and aliens inside */
+  background-image: url("download.jpg"); /* your image path */
+  background-size: 100%;   /* makes image cover whole area */
+  background-position: center; /* centers the image */
+  background-repeat: no-repeat;
 }
+
 
 .player {
   position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 56px;
-  height: 28px;
-  border-radius: 6px;
-  background: linear-gradient(180deg, #6ee7b7, #10b981);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: #022;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
-  text-align: center;
-  line-height: 28px;
+  width: 40px;   /* adjust to your rocket image width */
+  height: 50px;  /* adjust to your rocket image height */
+  pointer-events: none;
 }
+
 
 .alien {
   position: absolute;
-  width: 44px;
-  height: 32px;
-  border-radius: 6px;
-  background: linear-gradient(180deg, #ffd57a, #ffb86b);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #301;
-  font-weight: 700;
+  width: 44px;   /* match your UFO image width */
+  height: 32px;  /* match your UFO image height */
+  pointer-events: none;
 }
+
 
 .bullet {
   position: absolute;
@@ -161,7 +151,7 @@ main {
 .particle {
   width: 4px;
   height: 4px;
-  background: orange;
+  background:  rgb(175, 63, 175);;
 }
 
 .player-particle {
@@ -199,6 +189,14 @@ main {
   user-select: none;
   -webkit-user-select: none;
 }
+
+#pauseBtn {
+  margin-left: 10px;
+  padding: 5px 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
 
 @media (max-width: 700px) {
   header {
