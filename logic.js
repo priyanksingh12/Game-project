@@ -27,10 +27,8 @@ player.className = 'player';
 play.appendChild(player);
 
 player.onload = () => {
-  px = PF_W() / 2;
+  placePlayerCenter();
   player.style.display = 'block';
-  player.style.left = (px - player.clientWidth / 2) + 'px';
-  player.style.top = (PF_H() - player.clientHeight - 8) + 'px';
 };
 
 function spawnParticleExplosion(x, y, count = 15) {
@@ -116,6 +114,7 @@ const LEVELS = {
 function spawnAliens() {
   const cfg = LEVELS[level];
   const gapX = 12, gapY = 12, startX = 60, startY = isMobile ? 40 : 60;
+
   const temp = document.createElement('img');
   temp.src = 'ufo.png';
   temp.className = 'alien';
@@ -152,6 +151,51 @@ function aliveAliens() {
   return aliens.filter(a => a.alive).length;
 }
 
+function updateAliens(dt) {
+  if (!running) return;
+  const alive = aliens.filter(a => a.alive);
+  if (!alive.length) return;
+
+  const cfg = LEVELS[level];
+  let speed = cfg.alienSpeed * dt * 0.06;
+  if (isMobile) speed *= 0.15 + 0.05 * level;
+
+  const xs = alive.map(a => a.baseX + alienOffset);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...alive.map(a => a.baseX + alienOffset + a.el.clientWidth));
+  const dropDistance = isMobile ? 8 + level * 2 : 24;
+
+  if (minX < 8 && alienDir === -1) {
+    alienDir = 1;
+    alive.forEach(a => a.y += dropDistance);
+  }
+  if (maxX > PF_W() - 8 && alienDir === 1) {
+    alienDir = -1;
+    alive.forEach(a => a.y += dropDistance);
+  }
+
+  alienOffset += alienDir * speed;
+
+  alive.forEach(a => {
+    a.el.style.left = (a.baseX + alienOffset) + 'px';
+    a.el.style.top = a.y + 'px';
+    if (a.y + a.el.clientHeight >= PF_H() - 140) endGame(false);
+  });
+}
+
+function firePlayer() {
+  if (!running || gamePaused || playerShot) return;
+  const b = document.createElement('div');
+  b.className = 'bullet';
+  const bx = px - 3;
+  const by = PF_H() - player.clientHeight - 8 - 16;
+  b.style.left = bx + 'px';
+  b.style.top = by + 'px';
+  play.appendChild(b);
+  playerShot = b;
+  bullets.add(b);
+}
+
 function updateBullets(dt) {
   if (!running) return;
 
@@ -177,31 +221,13 @@ function updateBullets(dt) {
   if (playerShot) {
     const pfRect = play.getBoundingClientRect();
     const br = playerShot.getBoundingClientRect();
-    const brLocal = {
-      left: br.left - pfRect.left,
-      right: br.right - pfRect.left,
-      top: br.top - pfRect.top,
-      bottom: br.bottom - pfRect.top
-    };
+    const brLocal = { left: br.left - pfRect.left, right: br.right - pfRect.left, top: br.top - pfRect.top, bottom: br.bottom - pfRect.top };
 
     aliens.forEach(a => {
       if (!a.alive) return;
-
       const ar = a.el.getBoundingClientRect();
-      const arLocal = {
-        left: ar.left - pfRect.left,
-        right: ar.right - pfRect.left,
-        top: ar.top - pfRect.top,
-        bottom: ar.bottom - pfRect.top
-      };
-
-      const hit = !(
-        arLocal.right < brLocal.left ||
-        arLocal.left > brLocal.right ||
-        arLocal.bottom < brLocal.top ||
-        arLocal.top > brLocal.bottom
-      );
-
+      const arLocal = { left: ar.left - pfRect.left, right: ar.right - pfRect.left, top: ar.top - pfRect.top, bottom: ar.bottom - pfRect.top };
+      const hit = !(arLocal.right < brLocal.left || arLocal.left > brLocal.right || arLocal.bottom < brLocal.top || arLocal.top > brLocal.bottom);
       if (hit) {
         a.alive = false;
         a.el.remove();
@@ -210,44 +236,27 @@ function updateBullets(dt) {
         playerShot = null;
         score += 10;
         updateHUD();
-        spawnParticleExplosion((arLocal.left + arLocal.right) / 2, (arLocal.top + arLocal.bottom) / 2);
+        spawnParticleExplosion((arLocal.left + arLocal.right)/2, (arLocal.top + arLocal.bottom)/2);
       }
     });
   }
 
   const pfRect = play.getBoundingClientRect();
   const pr = player.getBoundingClientRect();
-  const pLocal = {
-    left: pr.left - pfRect.left,
-    right: pr.right - pfRect.left,
-    top: pr.top - pfRect.top,
-    bottom: pr.bottom - pfRect.top
-  };
+  const pLocal = { left: pr.left - pfRect.left, right: pr.right - pfRect.left, top: pr.top - pfRect.top, bottom: pr.bottom - pfRect.top };
 
   Array.from(enemyShots).forEach(s => {
     const ser = s.el.getBoundingClientRect();
-    const sLocal = {
-      left: ser.left - pfRect.left,
-      right: ser.right - pfRect.left,
-      top: ser.top - pfRect.top,
-      bottom: ser.bottom - pfRect.top
-    };
-
-    const hit = !(
-      pLocal.right < sLocal.left ||
-      pLocal.left > sLocal.right ||
-      pLocal.bottom < sLocal.top ||
-      pLocal.top > sLocal.bottom
-    );
-
+    const sLocal = { left: ser.left - pfRect.left, right: ser.right - pfRect.left, top: ser.top - pfRect.top, bottom: ser.bottom - pfRect.top };
+    const hit = !(pLocal.right < sLocal.left || pLocal.left > sLocal.right || pLocal.bottom < sLocal.top || pLocal.top > sLocal.bottom);
     if (hit) {
       s.el.remove();
       enemyShots.delete(s);
       lives -= 1;
       updateHUD();
-
       if (lives <= 0) {
         const rect = player.getBoundingClientRect();
+        const pfRect = play.getBoundingClientRect();
         const centerX = rect.left - pfRect.left + rect.width / 2;
         const centerY = rect.top - pfRect.top + rect.height / 2;
 
@@ -256,20 +265,15 @@ function updateBullets(dt) {
         running = false;
 
         function explosionLoop() {
-          if (particles.length === 0) {
-            endGame(false);
-            return;
-          }
+          if (particles.length === 0) { endGame(false); return; }
           updateParticles(16);
           requestAnimationFrame(explosionLoop);
         }
-
         explosionLoop();
       }
     }
   });
 }
-
 
 function alienFireChance() {
   if (!running) return;
@@ -289,15 +293,11 @@ function alienFireChance() {
 }
 
 const keys = {};
-
 window.addEventListener('keydown', e => {
   keys[e.key] = true;
   if (e.key === ' ' && !gamePaused) firePlayer();
 });
-
-window.addEventListener('keyup', e => {
-  keys[e.key] = false;
-});
+window.addEventListener('keyup', e => keys[e.key] = false);
 
 const mobileControls = document.createElement("div");
 mobileControls.id = "mobileControls";
@@ -310,94 +310,64 @@ document.body.appendChild(mobileControls);
 
 let leftPressed = false;
 let rightPressed = false;
-
-['leftBtn', 'rightBtn', 'fireBtn'].forEach(id => {
+let cr=['leftBtn', 'rightBtn', 'fireBtn']
+cr.forEach(id => {
   const btn = document.getElementById(id);
-
-  const handlePress = () => {
+  const setDown = () => {
     if (id === 'leftBtn') leftPressed = true;
     else if (id === 'rightBtn') rightPressed = true;
     else firePlayer();
   };
-
-  const handleRelease = () => {
+  const setUp = () => {
     if (id === 'leftBtn') leftPressed = false;
     else if (id === 'rightBtn') rightPressed = false;
   };
-
-  btn.addEventListener('touchstart', e => { e.preventDefault(); handlePress(); });
-  btn.addEventListener('touchend', e => { e.preventDefault(); handleRelease(); });
-  btn.addEventListener('pointerdown', e => { e.preventDefault(); handlePress(); });
-  btn.addEventListener('pointerup', e => { e.preventDefault(); handleRelease(); });
+  btn.addEventListener('touchstart', e => { e.preventDefault(); setDown(); });
+  btn.addEventListener('touchend', e => { e.preventDefault(); setUp(); });
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); setDown(); });
+  btn.addEventListener('pointerup', e => { e.preventDefault(); setUp(); });
 });
 
 
 let lastTime = performance.now();
-function loop(now) {
+function loop(now){
   const dt = Math.min(40, now - lastTime);
   lastTime = now;
+  if(!running) return;
+  if(gamePaused){ requestAnimationFrame(loop); return; }
 
-  if (!running) return;
-  if (gamePaused) {
-    requestAnimationFrame(loop);
-    return;
-  }
-
-  if (keys.ArrowLeft || keys.a || leftPressed) px -= (pV * dt) / 16;
-  if (keys.ArrowRight || keys.d || rightPressed) px += (pV * dt) / 16;
-
-  px = Math.max(player.clientWidth / 2 + 8, Math.min(PF_W() - player.clientWidth / 2 - 8, px));
-  player.style.left = (px - player.clientWidth / 2) + 'px';
+  if(keys.ArrowLeft || keys.a || leftPressed) px -= pV*dt/16;
+  if(keys.ArrowRight || keys.d || rightPressed) px += pV*dt/16;
+  px = Math.max(player.clientWidth/2+8, Math.min(PF_W()-player.clientWidth/2-8, px));
+  player.style.left = (px - player.clientWidth/2)+'px';
 
   updateAliens(dt);
   updateBullets(dt);
   updateParticles(dt);
 
-  if (aliveAliens() === 0) {
-    running = false;
-    msg.innerHTML = `Level ${level} cleared!`;
-    nextBtn.disabled = level === 3;
+  if(aliveAliens()===0){
+    running=false;
+    msg.innerHTML=`Level ${level} cleared!`;
+    nextBtn.disabled = level===3;
     return;
   }
 
   requestAnimationFrame(loop);
 }
 
-
-startBtn.addEventListener('click', () => {
-  startBtn.disabled = true;
-  nextBtn.disabled = true;
-
-  clearField();
-  placePlayerCenter();
-  spawnAliens();
-  updateHUD();
-
-  running = true;
-  lastTime = performance.now();
+startBtn.addEventListener('click', ()=>{
+  startBtn.disabled = true; nextBtn.disabled = true;
+  clearField(); placePlayerCenter(); spawnAliens(); updateHUD();
+  running=true; lastTime=performance.now();
   requestAnimationFrame(loop);
-
-  alienTimer = setInterval(() => {
-    if (running && !gamePaused) alienFireChance();
-  }, 700);
+  alienTimer = setInterval(()=>{ if(running && !gamePaused) alienFireChance(); },700);
 });
 
-
-nextBtn.addEventListener('click', () => {
-  if (level < 3) {
-    level++;
-    lives = Math.min(3, lives + 1);
-    updateHUD();
-
-    nextBtn.disabled = true;
-    startBtn.disabled = false;
-
-    msg.innerHTML = `Ready for level ${level}`;
-  }
+nextBtn.addEventListener('click', ()=>{
+  if(level<3){ level++; lives=Math.min(3,lives+1); updateHUD(); nextBtn.disabled=true; startBtn.disabled=false; msg.innerHTML=`Ready for level ${level}`; }
 });
 
-
-resetBtn.addEventListener('click', ()=> {
+resetBtn.addEventListener('click', ()=>{
   clearInterval(alienTimer);
   running=false;
   clearField();
@@ -407,25 +377,18 @@ resetBtn.addEventListener('click', ()=> {
   startBtn.disabled=false; nextBtn.disabled=true;
 });
 
-pauseBtn.addEventListener('click', ()=> {
+pauseBtn.addEventListener('click', ()=>{
   if(!running) return;
   gamePaused=!gamePaused;
   pauseBtn.textContent = gamePaused?'Resume':'Pause';
   if(!gamePaused) lastTime=performance.now(); requestAnimationFrame(loop);
 });
 
-muteBtn.addEventListener('click', () => {
-  if (bgMusic.paused) {
-    bgMusic.play();
-    muteBtn.textContent = 'Mute';
-  } else {
-    bgMusic.pause();
-    muteBtn.textContent = 'Unmute';
-  }
+muteBtn.addEventListener('click', ()=>{
+  if(bgMusic.paused){ bgMusic.play(); muteBtn.textContent='Mute'; } else { bgMusic.pause(); muteBtn.textContent='Unmute'; }
 });
 
-
-function endGame(won) {
+function endGame(won){
   running=false;
   clearInterval(alienTimer);
   enemyShots.forEach(e=>e.el?.remove()); enemyShots.clear();
@@ -435,38 +398,5 @@ function endGame(won) {
   player.style.display='block';
   if(won){ msg.innerHTML=`<b>You beat the game! Score ${score}</b>`; } 
   else { msg.innerHTML=`<b>GAME OVER</b>`; score=0; level=1; lives=3; updateHUD(); startBtn.disabled=false; nextBtn.disabled=true; }
-}
-
-function endGame(won) {
-  running = false;
-  clearInterval(alienTimer);
-
-  enemyShots.forEach(e => e.el?.remove());
-  enemyShots.clear();
-
-  bullets.forEach(b => b.remove());
-  bullets.clear();
-
-  if (playerShot) {
-    playerShot.remove();
-    playerShot = null;
-  }
-
-  particles.forEach(p => p.remove());
-  particles.length = 0;
-
-  player.style.display = 'block';
-
-  if (won) {
-    msg.innerHTML = `<b>You beat the game! Score ${score}</b>`;
-  } else {
-    msg.innerHTML = `<b>GAME OVER</b>`;
-    score = 0;
-    level = 1;
-    lives = 3;
-    updateHUD();
-    startBtn.disabled = false;
-    nextBtn.disabled = true;
-  }
 }
 
