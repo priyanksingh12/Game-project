@@ -79,29 +79,29 @@ main {
 }
 
 #playfield {
-  width: 800px;       /* or your game width */
-  height: 560px;      /* or your game height */
-  position: relative; /* already likely set */
-  overflow: hidden;   /* keeps particles and aliens inside */
-  background-image: url("download.jpg"); /* your image path */
-  background-size: 100%;   /* makes image cover whole area */
-  background-position: center; /* centers the image */
+  width: 800px;       
+  height: 560px;      
+  position: relative; 
+  overflow: hidden;   
+  background-image: url("download.jpg"); 
+  background-size: 100%;   
+  background-position: center; 
   background-repeat: no-repeat;
 }
 
 
 .player {
   position: absolute;
-  width: 40px;   /* adjust to your rocket image width */
-  height: 50px;  /* adjust to your rocket image height */
+  width: 40px;   
+  height: 50px;  
   pointer-events: none;
 }
 
 
 .alien {
   position: absolute;
-  width: 44px;   /* match your UFO image width */
-  height: 32px;  /* match your UFO image height */
+  width: 44px;  
+  height: 32px;  
   pointer-events: none;
 }
 
