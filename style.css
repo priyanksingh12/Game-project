@@ -30,11 +30,11 @@ header {
   align-items: center;
   gap: 16px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 h1 {
   font-size: 20px;
-  margin-right: 8px;
 }
 
 .hud {
@@ -66,8 +66,8 @@ button:disabled {
 }
 
 main {
-  width: px;
-  max-width: fit-content;
+  width: 100%;
+  max-width: 880px;
   height: 560px;
   background: linear-gradient(180deg, #021726, #00131a);
   border-radius: 10px;
@@ -79,32 +79,40 @@ main {
 }
 
 #playfield {
-  width: 800px;       
-  height: 560px;      
-  position: relative; 
-  overflow: hidden;   
-  background-image: url("download.jpg"); 
-  background-size: 100%;   
-  background-position: center; 
-  background-repeat: no-repeat;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: black url('download.jpg') no-repeat center center;
+  background-size: cover;
+  overflow: hidden;
 }
 
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 8px;
+  color: white;
+  text-align: center;
+  font-family: monospace;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+}
 
 .player {
   position: absolute;
-  width: 40px;   
-  height: 50px;  
+  width: 40px;
+  height: 50px;
   pointer-events: none;
 }
-
 
 .alien {
   position: absolute;
-  width: 44px;  
-  height: 32px;  
+  width: 44px;
+  height: 32px;
   pointer-events: none;
 }
-
 
 .bullet {
   position: absolute;
@@ -139,6 +147,7 @@ main {
   transform: translateX(-50%);
   color: #ffd86b;
   font-weight: 600;
+  z-index: 500;
 }
 
 .particle,
@@ -151,7 +160,7 @@ main {
 .particle {
   width: 4px;
   height: 4px;
-  background:  rgb(175, 63, 175);;
+  background: rgb(175, 63, 175);
 }
 
 .player-particle {
@@ -187,7 +196,6 @@ main {
   align-items: center;
   justify-content: center;
   user-select: none;
-  -webkit-user-select: none;
 }
 
 #pauseBtn {
@@ -197,7 +205,7 @@ main {
   cursor: pointer;
 }
 
-
+/* MOBILE STYLES */
 @media (max-width: 700px) {
   header {
     flex-direction: column;
@@ -209,9 +217,8 @@ main {
   }
 
   .player {
-    width: 48px;
+    width: 36px;
     height: 24px;
-    line-height: 24px;
   }
 
   .alien {
@@ -221,6 +228,16 @@ main {
 
   #mobileControls {
     display: flex;
+    bottom: 10px;
+    gap: 16px;
+  }
+
+  #mobileControls button {
+    font-size: 24px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.2);
+    color: white;
   }
 }
 
